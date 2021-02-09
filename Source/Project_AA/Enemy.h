@@ -10,8 +10,9 @@ UENUM(BlueprintType)
 enum class EEnemyState : uint8
 {
 	EES_Idle UMETA(DisplayName="Idle"),
-	EES_Follow UMETA(DisplayName = "Idle"),
-	EES_Attack UMETA(DisplayName = "Idle"),
+	EES_MoveToTarget UMETA(DisplayName = "MoveToTarget"),
+	EES_Attack UMETA(DisplayName = "Attack"),
+	EES_Death UMETA(DisplayName = "Death"),
 
 	EES_MAX UMETA(DisplayName = "Default")
 };
@@ -25,6 +26,12 @@ public:
 	// Sets default values for this character's properties
 	AEnemy();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat")
+	class UCapsuleComponent* CombatCapsule;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat")
+	class UStaticMeshComponent* WeaponMesh;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
 	float MaxHealth;
 
@@ -33,6 +40,9 @@ public:
 
 	UPROPERTY(EditAnywhere,Category="Enemy State")
 	EEnemyState EnemyState;
+
+	FORCEINLINE void SetEnemyStatus(EEnemyState Status) { EnemyState = Status; }
+	FORCEINLINE EEnemyState GetEnemyStatus() { return EnemyState; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -51,4 +61,67 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy")
 	UAnimMontage* EnemyAnim;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	class USphereComponent* AgroSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	class USphereComponent* CombatSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool bAttacking;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool bTarget;
+
+	void Attack();
+
+	UFUNCTION(BlueprintCallable)
+	void EndAttack();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackMinTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackMaxTime;
+
+	FTimerHandle AttackTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	float Damage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool bOverappingCombatSphere;
+
+	UFUNCTION(BlueprintCallable)
+	void MoveToTarget(class AProject_AACharacter* Target);
+
+	AProject_AACharacter* Main;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	class AAIController* AIController;
+
+	UFUNCTION(BlueprintCallable)
+	void CollisionOn();
+
+	UFUNCTION(BlueprintCallable)
+	void CollisionOff();
+
+	UFUNCTION()
+	virtual void AgroSphereOnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void AgroSphereOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	virtual void CombatSphereOnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void CombatSpherenOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	virtual void CombatCollisionOnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void CombatCollisionOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

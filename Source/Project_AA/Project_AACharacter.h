@@ -55,13 +55,16 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-	/** Handler for when a touch input begins. */
-	void TouchStarted(ETouchIndex::Type FingerIndex, FVector Location);
+	/**************************** 스탯 *********************************/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float Health;
 
-	/** Handler for when a touch input stops. */
-	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float MaxHealth;
 
-	/**************************** 달리기 *********************************/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	float Damage;
+	/**************************** 달리기 / 점프 *************************/
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Movement")
 	bool bSprint;
 
@@ -76,6 +79,9 @@ protected:
 
 	UFUNCTION()
 	void StopSprint();
+
+	UFUNCTION()
+	void StartJump();
 	/****************************** 구르기 ********************************/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
 	bool bRoll;
@@ -107,6 +113,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Combat")
 	class UAnimMontage* CombatMontage;
+
+	void Die();
+
+	UFUNCTION(BlueprintCallable)
+	void DeathEnd();
+
+	bool bDeath;
+
+	bool getDeath() { return bDeath; }
 	/****************************** 공격 효과 ********************************/ 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite,Category="Combat")
 	class UCapsuleComponent* CombatCapsule;
@@ -116,6 +131,17 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void CollisionOff();
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	class UParticleSystem* HitParticles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	class USoundCue* HitSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Sound")
+	USoundCue* SwingSound;
 
 	/******************************** Overlap ********************************/
 	UFUNCTION()

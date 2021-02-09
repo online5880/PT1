@@ -14,6 +14,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Enemy.h"
+#include "Sound/SoundCue.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AProject_AACharacter
@@ -43,11 +45,16 @@ AProject_AACharacter::AProject_AACharacter()
 	RunSpeed = 350.f;
 	SprintSpeed = 600.f;
 
+	Health = 30.f;
+	MaxHealth = 100.f;
+	Damage = 20.f;
+
 	bSprint = false;
 	bRoll = false;
 	bLMBDwon = false;
 	bAttacking = false;
 	bIsAttackButtonAttack = false;
+	bDeath = false;
 	ComboCount = 0;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
@@ -79,7 +86,7 @@ void AProject_AACharacter::SetupPlayerInputComponent(class UInputComponent* Play
 {
 	
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AProject_AACharacter::StartJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AProject_AACharacter::StartSprint);
@@ -99,12 +106,6 @@ void AProject_AACharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AProject_AACharacter::LookUpAtRate);
 
-	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &AProject_AACharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &AProject_AACharacter::TouchStopped);
-
-	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AProject_AACharacter::OnResetVR);
 }
 
 void AProject_AACharacter::BeginPlay()
@@ -125,6 +126,28 @@ void AProject_AACharacter::CollisionOff()
 	CombatCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+float AProject_AACharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	float damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+		Health -= damage;
+
+	if (Health <= 0.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Die"));
+		Die();
+
+		return damage;
+	}
+	return damage;
+}
+
+void AProject_AACharacter::DeathEnd()
+{
+	GetMesh()->bPauseAnims = true;
+	GetMesh()->bNoSkeletonUpdate = true;
+}
+
 void AProject_AACharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	AProject_AACharacter* Main = Cast<AProject_AACharacter>(OtherActor);
@@ -136,14 +159,19 @@ void AProject_AACharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedCompone
 		/*CombatCapsule->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		CombatCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);*/
 	}
-	else
+	if (OtherActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No Main"));
-//		CombatCapsule->SetCollisionResponseToAllChannels(ECR_Overlap);
+		AEnemy* Enemy = Cast<AEnemy>(OtherActor);
+		if (Enemy)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No Main"));
+			//CombatCapsule->SetCollisionResponseToAllChannels(ECR_Overlap);
 
-		UGameplayStatics::ApplyDamage(OtherActor, 20, NULL, GetOwner(), NULL);
-
+			UGameplayStatics::ApplyDamage(Enemy, Damage, NULL, GetOwner(), NULL);
+		}
 	}
+	
+
 }
 
 void AProject_AACharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -167,6 +195,14 @@ void AProject_AACharacter::StopSprint()
 	GetCharacterMovement()->MaxWalkSpeed = 350.f;
 }
 
+void AProject_AACharacter::StartJump()
+{
+	if (!bDeath && !bAttacking)
+	{
+		ACharacter::Jump();
+	}
+}
+
 void AProject_AACharacter::StartRoll()
 {
 	bRoll = true;
@@ -187,9 +223,7 @@ void AProject_AACharacter::Attack()
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	if (AnimInstance)
-	{
-	}
+	
 	if (!AnimInstance || !CombatMontage) return;
 
 	bAttacking = true;
@@ -247,6 +281,17 @@ void AProject_AACharacter::LMBUp()
 }
 
 
+void AProject_AACharacter::Die()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(CombatMontage, 1.f);
+		AnimInstance->Montage_JumpToSection(FName("Death"), CombatMontage);
+		bDeath = true;
+	}
+}
+
 void AProject_AACharacter::OnResetVR()
 {
 	// If Project_AA is added to a project via 'Add Feature' in the Unreal Editor the dependency on HeadMountedDisplay in Project_AA.Build.cs is not automatically propagated
@@ -256,16 +301,6 @@ void AProject_AACharacter::OnResetVR()
 	// or:
 	//		Comment or delete the call to ResetOrientationAndPosition below (appropriate if not supporting VR)
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
-}
-
-void AProject_AACharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
-{
-		Jump();
-}
-
-void AProject_AACharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
-{
-		StopJumping();
 }
 
 void AProject_AACharacter::TurnAtRate(float Rate)
@@ -282,7 +317,7 @@ void AProject_AACharacter::LookUpAtRate(float Rate)
 
 void AProject_AACharacter::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.0f))
+	if ((Controller != nullptr) && (Value != 0.0f)&& (!bDeath))
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -296,7 +331,7 @@ void AProject_AACharacter::MoveForward(float Value)
 
 void AProject_AACharacter::MoveRight(float Value)
 {
-	if ( (Controller != nullptr) && (Value != 0.0f) )
+	if ( (Controller != nullptr) && (Value != 0.0f)&&(!bDeath) )
 	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
