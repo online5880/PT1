@@ -48,6 +48,7 @@ AProject_AACharacter::AProject_AACharacter()
 	Health = 30.f;
 	MaxHealth = 100.f;
 	Damage = 20.f;
+	Potion = 8;
 
 	bSprint = false;
 	bRoll = false;
@@ -98,6 +99,8 @@ void AProject_AACharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AProject_AACharacter::LMBDown);
 	PlayerInputComponent->BindAction("Attack", IE_Released, this, &AProject_AACharacter::LMBUp);
 
+	PlayerInputComponent->BindAction("Potion", IE_Pressed, this, &AProject_AACharacter::DrinkPotion);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &AProject_AACharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AProject_AACharacter::MoveRight);
 
@@ -116,6 +119,18 @@ void AProject_AACharacter::BeginPlay()
 	CombatCapsule->OnComponentEndOverlap.AddDynamic(this, &AProject_AACharacter::OnOverlapEnd);
 }
 
+void AProject_AACharacter::DrinkPotion()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(CombatMontage, 1.f);
+		AnimInstance->Montage_JumpToSection(FName("Potion"), CombatMontage);
+		Potion--;
+	}
+}
+
 void AProject_AACharacter::CollisionOn()
 {
 	CombatCapsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -131,6 +146,16 @@ float AProject_AACharacter::TakeDamage(float DamageAmount, struct FDamageEvent c
 	float damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 		Health -= damage;
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+		if (AnimInstance)
+		{
+			AnimInstance->Montage_Play(CombatMontage, 1.f);
+			AnimInstance->Montage_JumpToSection(FName("React"), CombatMontage);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("React"));
 
 	if (Health <= 0.f)
 	{
@@ -168,7 +193,9 @@ void AProject_AACharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedCompone
 			//CombatCapsule->SetCollisionResponseToAllChannels(ECR_Overlap);
 
 			UGameplayStatics::ApplyDamage(Enemy, Damage, NULL, GetOwner(), NULL);
+
 		}
+
 	}
 	
 
@@ -206,16 +233,19 @@ void AProject_AACharacter::StartJump()
 void AProject_AACharacter::StartRoll()
 {
 	bRoll = true;
-	if (bRoll)
-	{
 
-	}
+	FVector Location1 = GetActorLocation();
+	FVector Location2 = GetActorForwardVector();
+	SetActorLocation(Location1 + Location2 * 200.f, true);
+	
 }
 
 void AProject_AACharacter::StopRoll()
 {
 	bRoll = false;
 }
+
+
 
 void AProject_AACharacter::Attack()
 {
@@ -233,11 +263,12 @@ void AProject_AACharacter::Attack()
 	if (!(AnimInstance->Montage_IsPlaying(CombatMontage)))
 	{
 		AnimInstance->Montage_Play(CombatMontage);
+		AnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
 	}
 	else if (AnimInstance->Montage_IsPlaying(CombatMontage))
 	{
 		AnimInstance->Montage_IsPlaying(CombatMontage);
-		AnimInstance->Montage_JumpToSection(FName(Attacklist[ComboCount]), CombatMontage);
+		AnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
 	}
 }
 
@@ -265,7 +296,7 @@ void AProject_AACharacter::LMBDown()
 {
 	bLMBDwon = true;
 
-	if (bAttacking == false)
+	if (bAttacking == false && (!bPressedJump))
 	{
 		Attack();
 	}
@@ -292,16 +323,6 @@ void AProject_AACharacter::Die()
 	}
 }
 
-void AProject_AACharacter::OnResetVR()
-{
-	// If Project_AA is added to a project via 'Add Feature' in the Unreal Editor the dependency on HeadMountedDisplay in Project_AA.Build.cs is not automatically propagated
-	// and a linker error will result.
-	// You will need to either:
-	//		Add "HeadMountedDisplay" to [YourProject].Build.cs PublicDependencyModuleNames in order to build successfully (appropriate if supporting VR).
-	// or:
-	//		Comment or delete the call to ResetOrientationAndPosition below (appropriate if not supporting VR)
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
-}
 
 void AProject_AACharacter::TurnAtRate(float Rate)
 {
@@ -317,7 +338,7 @@ void AProject_AACharacter::LookUpAtRate(float Rate)
 
 void AProject_AACharacter::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.0f)&& (!bDeath))
+	if ((Controller != nullptr) && (Value != 0.0f)&& (!bDeath) && (!bAttacking))
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -331,7 +352,7 @@ void AProject_AACharacter::MoveForward(float Value)
 
 void AProject_AACharacter::MoveRight(float Value)
 {
-	if ( (Controller != nullptr) && (Value != 0.0f)&&(!bDeath) )
+	if ( (Controller != nullptr) && (Value != 0.0f)&&(!bDeath)&& (!bAttacking) )
 	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();

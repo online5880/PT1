@@ -87,6 +87,13 @@ public:
 
 	FTimerHandle AttackTimer;
 
+	FTimerHandle DeathTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float DeathDelay;
+
+	void EnemyDestroy();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	float Damage;
 

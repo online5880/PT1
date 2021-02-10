@@ -54,6 +54,8 @@ AEnemy::AEnemy()
 	AttackMinTime = 1.f;
 	AttackMaxTime = 2.f;
 
+	DeathDelay = 1.5f;
+
 }
 
 // Called when the game starts or when spawned
@@ -104,6 +106,14 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 
 	Health -= damage;
 
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(EnemyAnim, 1.f);
+		AnimInstance->Montage_JumpToSection(FName("React"), EnemyAnim);
+	}
+
 	if (Health <= 0.f)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Die"));
@@ -124,9 +134,17 @@ void AEnemy::Die()
 		AnimInstance->Montage_Play(EnemyAnim, 1.f);
 		AnimInstance->Montage_JumpToSection(FName("Death"), EnemyAnim);
 		SetActorEnableCollision(false);
+
+		GetWorldTimerManager().SetTimer(DeathTimer, this, &AEnemy::EnemyDestroy, DeathDelay);
+		
 	}
 }
 
+
+void AEnemy::EnemyDestroy()
+{
+	Destroy();
+}
 
 void AEnemy::MoveToTarget(class AProject_AACharacter* Target)
 {
