@@ -22,6 +22,8 @@
 
 AProject_AACharacter::AProject_AACharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -47,6 +49,8 @@ AProject_AACharacter::AProject_AACharacter()
 
 	Health = 30.f;
 	MaxHealth = 100.f;
+	Stamina = 50.f;
+	MaxStamina = 200.f;
 	Damage = 20.f;
 	Potion = 8;
 
@@ -101,6 +105,9 @@ void AProject_AACharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	PlayerInputComponent->BindAction("Potion", IE_Pressed, this, &AProject_AACharacter::DrinkPotion);
 
+	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &AProject_AACharacter::Block);
+	PlayerInputComponent->BindAction("Block", IE_Released, this, &AProject_AACharacter::BlockOff);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &AProject_AACharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AProject_AACharacter::MoveRight);
 
@@ -109,6 +116,31 @@ void AProject_AACharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AProject_AACharacter::LookUpAtRate);
 
+}
+
+void AProject_AACharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	
+	if (Stamina >= MaxStamina)
+	{
+		Stamina = MaxStamina;
+	}
+
+	if (bSprint)
+	{
+		Stamina -= DeltaTime * 20;
+	}
+	else
+	{
+		Stamina += DeltaTime * 20;
+		if (Stamina >= MaxStamina)
+		{
+			Stamina = MaxStamina;
+		}
+
+	}
 }
 
 void AProject_AACharacter::BeginPlay()
@@ -125,9 +157,22 @@ void AProject_AACharacter::DrinkPotion()
 
 	if (AnimInstance)
 	{
-		AnimInstance->Montage_Play(CombatMontage, 1.f);
-		AnimInstance->Montage_JumpToSection(FName("Potion"), CombatMontage);
-		Potion--;
+		
+		if (Health >= 100)
+		{
+			Health = MaxHealth;
+		}
+		if (Potion > 0)
+		{
+			Potion--;
+			AnimInstance->Montage_Play(CombatMontage, 1.f);
+			AnimInstance->Montage_JumpToSection(FName("Potion"), CombatMontage);
+			Health += 10;
+		}
+		else 
+		{
+			Potion = 0;
+		}
 	}
 }
 
@@ -230,6 +275,28 @@ void AProject_AACharacter::StartJump()
 	}
 }
 
+void AProject_AACharacter::Block()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(CombatMontage, 1.f);
+		AnimInstance->Montage_JumpToSection(FName("Block"), CombatMontage);
+	}
+}
+
+void AProject_AACharacter::BlockOff()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(CombatMontage, 1.f);
+		AnimInstance->Montage_JumpToSection(FName("Idle"), CombatMontage);
+	}
+}
+
 void AProject_AACharacter::StartRoll()
 {
 	bRoll = true;
@@ -238,6 +305,7 @@ void AProject_AACharacter::StartRoll()
 	FVector Location2 = GetActorForwardVector();
 	SetActorLocation(Location1 + Location2 * 200.f, true);
 	
+	Stamina -= 15.f;
 }
 
 void AProject_AACharacter::StopRoll()

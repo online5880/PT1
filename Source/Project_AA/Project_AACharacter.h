@@ -46,7 +46,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	float MaxHealth;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float Stamina;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float MaxStamina;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	float Damage;
 	/**************************** 달리기 / 점프 *************************/
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Movement")
@@ -66,6 +72,12 @@ protected:
 
 	UFUNCTION()
 	void StartJump();
+	/****************************** 방어 **********************************/
+	
+	void Block();
+
+	void BlockOff();
+
 	/****************************** 구르기 ********************************/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
 	bool bRoll;
@@ -150,5 +162,7 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	virtual void Tick(float DeltaTime) override;
 };
 
