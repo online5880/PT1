@@ -21,3 +21,6 @@
 ### 2021/02/08 메인캐릭터 CombatCollision / 적 체력, 죽음, 데미지, 죽는 모션
 ### 2021/02/09 적AI 따라오기, 공격, 대기 판정 / 메인캐릭터 죽음, 공격 판정
 ### 2021/02/09 전체적인 UI / 공격 트레일 / 피격 판정 / 구르기 RootMotion 을 못구해서 텔레포트로 일단 대체....
+### 2021/02/13 체력, 스태미너 HUD 연동 / 체력회복(포션) 애니메이션 및 효과
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/KUXEOjKaU2c" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
