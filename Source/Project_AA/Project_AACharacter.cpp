@@ -42,7 +42,7 @@ AProject_AACharacter::AProject_AACharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 400.f;
 	GetCharacterMovement()->AirControl = 0.2f;
-	GetCharacterMovement()->MaxWalkSpeed = 350.f;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 
 	RunSpeed = 350.f;
 	SprintSpeed = 600.f;
@@ -257,14 +257,14 @@ void AProject_AACharacter::StartSprint()
 	bSprint = true;
 	if (bSprint)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+		GetCharacterMovement()->MaxWalkSpeed = 550.f;
 	}
 }
 
 void AProject_AACharacter::StopSprint()
 {
 	bSprint = false;
-	GetCharacterMovement()->MaxWalkSpeed = 350.f;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
 void AProject_AACharacter::StartJump()

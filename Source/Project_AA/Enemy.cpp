@@ -120,6 +120,10 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 		
 		Die();
 
+		CombatCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CombatSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		AgroSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 		return damage;
 	}
 	return damage;
@@ -275,7 +279,7 @@ void AEnemy::Attack()
 	SetEnemyStatus(EEnemyState::EES_Attack);
 	AIController->StopMovement();
 	//AIController->StopMovement();
-	if (!bAttacking && (!Main->GetMesh()->bNoSkeletonUpdate))
+	if (!bAttacking && (!Main->GetMesh()->bNoSkeletonUpdate) && Health > 0)
 	{
 		bAttacking = true;
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
