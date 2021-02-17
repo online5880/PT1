@@ -16,6 +16,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Enemy.h"
 #include "Sound/SoundCue.h"
+#include "HitCameraShake.h"
+#include "Camera/PlayerCameraManager.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AProject_AACharacter
@@ -83,6 +85,11 @@ AProject_AACharacter::AProject_AACharacter()
 	
 }
 
+
+void AProject_AACharacter::EnemyHealth(float CurrentHealth,float EnemyMaxHealth)
+{
+	(CurrentHealth / EnemyMaxHealth);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -231,14 +238,17 @@ void AProject_AACharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedCompone
 	}
 	if (OtherActor)
 	{
-		AEnemy* Enemy = Cast<AEnemy>(OtherActor);
+		Enemy = Cast<AEnemy>(OtherActor);
 		if (Enemy)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("No Main"));
 			//CombatCapsule->SetCollisionResponseToAllChannels(ECR_Overlap);
 
 			UGameplayStatics::ApplyDamage(Enemy, Damage, NULL, GetOwner(), NULL);
+			//StartCameraShake(ShakeClass,1.0f,ECameraShakePlaySpace::CameraLocal,FRotator(0.f));
 
+			//Camera->StartCameraShake(ShakeClass, 1.0f, ECameraShakePlaySpace::CameraLocal, FRotator(0.f));
+			GetWorld()->GetFirstPlayerController()->PlayerCameraManager->PlayCameraShake(ShakeClass, 1.0f, ECameraShakePlaySpace::CameraLocal, FRotator(0.f));
 		}
 
 	}
@@ -328,21 +338,27 @@ void AProject_AACharacter::Attack()
 
 	const char* Attacklist[] = { "Attack_1","Attack_2","Attack_3" };
 
-	if (!(AnimInstance->Montage_IsPlaying(CombatMontage)))
-	{
-		AnimInstance->Montage_Play(CombatMontage);
-		AnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
-	}
-	else if (AnimInstance->Montage_IsPlaying(CombatMontage))
-	{
-		AnimInstance->Montage_IsPlaying(CombatMontage);
-		AnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
-	}
+	int32 Section = FMath::RandRange(0, 2);
+
+	//if (!(AnimInstance->Montage_IsPlaying(CombatMontage)))
+	//{
+	//	AnimInstance->Montage_Play(CombatMontage);
+	//	//AnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
+	//}
+	//else if (AnimInstance->Montage_IsPlaying(CombatMontage))
+	//{
+	//	AnimInstance->Montage_Play(CombatMontage);
+	//	AnimInstance->Montage_JumpToSection(FName(Attacklist[Section]), CombatMontage);
+	//}
+
+	AnimInstance->Montage_Play(CombatMontage,1.2f);
+	AnimInstance->Montage_JumpToSection(FName(Attacklist[Section]), CombatMontage);
 }
 
 void AProject_AACharacter::EndAttack()
 {
 	bAttacking = false;
+	UE_LOG(LogTemp, Warning, TEXT("bAttacking = false"));
 }
 
 void AProject_AACharacter::AttackInputChecking()
@@ -352,11 +368,13 @@ void AProject_AACharacter::AttackInputChecking()
 		ComboCount = 0;
 	}
 
-	if (bIsAttackButtonAttack == true)
+	if (bIsAttackButtonAttack == true && !bAttacking)
 	{
 		ComboCount += 1;
 		bIsAttackButtonAttack = false;
 		Attack();
+	
+		UE_LOG(LogTemp, Warning, TEXT("%d"), ComboCount);
 	}
 }
 

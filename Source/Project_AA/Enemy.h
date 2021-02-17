@@ -32,10 +32,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat")
 	class UStaticMeshComponent* WeaponMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy")
 	float MaxHealth;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy")
 	float Health;
 
 	UPROPERTY(EditAnywhere,Category="Enemy State")

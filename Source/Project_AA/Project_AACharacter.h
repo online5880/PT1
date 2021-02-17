@@ -25,13 +25,21 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	class AEnemy* Enemy;
+
+	UFUNCTION(BlueprintCallable)
+	void EnemyHealth(float CurrentHealth, float EnemyMaxHealt);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	TSubclassOf<class UHitCameraShake> ShakeClass;
+
 protected:
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	void MoveForward(float Value);
-
 
 	void MoveRight(float Value);
 
