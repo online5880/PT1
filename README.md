@@ -23,4 +23,6 @@
 ### 2021/02/09 전체적인 UI / 공격 트레일 / 피격 판정 / 구르기 RootMotion 을 못구해서 텔레포트로 일단 대체....
 ### 2021/02/13 체력, 스태미너 HUD 연동 / 체력회복(포션) 애니메이션 및 효과
 ### 2021/02/14 맵 레벨링(오브젝트 및 라이트)
+![다운로드](https://user-images.githubusercontent.com/58097724/108216152-7d2ac780-7175-11eb-96e3-448ff6a20ad6.png)
 ### 2021/02/17 전체적인 UI / Sound 삽입
+![제목 없음](https://user-images.githubusercontent.com/58097724/108216238-959ae200-7175-11eb-8a59-9f19824ffc6d.png)
